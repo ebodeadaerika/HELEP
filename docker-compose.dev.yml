@@ -1,0 +1,82 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:3.9
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      ALLOW_PLAINTEXT_LISTENER: yes
+    ports:
+      - "9094:9094"
+
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8001:8001"
+    environment:
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - JWT_SECRET=change-me-in-production-256bit
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+    depends_on:
+      - kafka
+
+  sos-service:
+    build: ./services/sos-service
+    ports:
+      - "8002:8002"
+    environment:
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - JWT_SECRET=change-me-in-production-256bit
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+    depends_on:
+      - kafka
+
+  dispatch-service:
+    build: ./services/dispatch-service
+    ports:
+      - "8003:8003"
+    environment:
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - JWT_SECRET=change-me-in-production-256bit
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+      - MATCHER=nearest
+    depends_on:
+      - kafka
+
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "8004:8004"
+    environment:
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - JWT_SECRET=change-me-in-production-256bit
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+    depends_on:
+      - kafka
+
+  analytics-service:
+    build: ./services/analytics-service
+    ports:
+      - "8005:8005"
+    environment:
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - JWT_SECRET=change-me-in-production-256bit
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+    depends_on:
+      - kafka
